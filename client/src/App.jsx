@@ -4,6 +4,7 @@ import Results from "./pages/Results";
 import BuyCredits from "./pages/BuyCredits";
 import { Outlet } from "react-router-dom";
 import Navbar from "./components/Navbar";
+import Footer from "./components/Footer";
 
 const App = () => {
   return (
@@ -12,6 +13,7 @@ const App = () => {
       <main>
       <Outlet />
       </main>
+      <Footer/>
     </div>
   );
 };
