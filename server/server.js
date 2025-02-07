@@ -1,13 +1,18 @@
-import express from "express";
-import cors from "cors";
 import "dotenv/config";
+import connectDB from "./db/index.js";
+import { app } from "./app.js";
 
 const port = process.env.PORT || 3000;
-const app = express();
 
-app.use(express.json());
-app.use(cors());
-
-app.get("/", (req, res) => res.send("API Working !!!"));
-
-app.listen(port, () => console.log(`Server is running on port ${port}`));
+connectDB()
+  .then(() => {
+    app.on("error", (error) => {
+      console.error("🔴 Error interacting with database: ", error);
+    });
+    app.listen(process.env.PORT || 5000, () => {
+      console.log(`🟢 Server is running on port ${port}`);
+    });
+  })
+  .catch((error) => {
+    console.log("🔴 MongoDB connection failed !!!", error);
+  });
