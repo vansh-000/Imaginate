@@ -4,7 +4,7 @@ import { asyncHandler } from "../utils/asyncHandler.js";
 import jwt from "jsonwebtoken";
 
 export const validateJWT = asyncHandler(async (req, res, next) => {
-  const token = req.cookies?.accessToken;
+  const token = req.cookies?.accessToken || req.headers?.accesstoken;
   if (!token) {
     throw new ApiError("Access token missing. Unauthorized access.", 401);
   }
