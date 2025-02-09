@@ -1,16 +1,50 @@
-import React, { useState } from 'react';
+import React, { useContext, useState } from 'react';
 import { assets } from '../assets/assets';
 import { motion } from 'framer-motion';
+import axios from 'axios';
+import { useNavigate } from 'react-router-dom';
+import { toast } from 'react-toastify';
+import { AppContext } from '../context/appContext';
 
 const Results = () => {
   const [image, setImage] = useState(assets.sample_img_1);
   const [isImageLoaded, setIsImageLoaded] = useState(false);
   const [loading, setLoading] = useState(false);
   const [input, setInput] = useState('');
+  const { creditData, backendUrl, accessToken } = useContext(AppContext);
+  const navigate = useNavigate();
+
+  const generateImage = async (prompt) => {
+    try {
+      const { data } = await axios.post(backendUrl + '/api/image/generate-image', { prompt }, { headers: { accessToken } });
+      if (data.success) {
+        toast.success('Image generated successfully');
+        creditData()
+        return data.resultImage
+      } else {
+        toast.error(data.message);
+      }
+    } catch (error) {
+      toast.error(error.message)
+      creditData()
+      if (data.creditBalance === 0) {
+        toast.error('You have no credits left')
+        navigate('/buy')
+      }
+    }
+  }
 
   const onSubmitFxn = async (e) => {
     e.preventDefault();
-    console.log('Hello cutie')
+    setLoading(true);
+    if (input) {
+      const image = await generateImage(input);
+      if (image) {
+        setIsImageLoaded(true);
+        setImage(image);
+      }
+    }
+    setLoading(false);
   }
 
   return (

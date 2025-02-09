@@ -9,7 +9,7 @@ connectDB()
     app.on("error", (error) => {
       console.error("🔴 Error interacting with database: ", error);
     });
-    app.listen(process.env.PORT || 5000, () => {
+    app.listen(port, () => {
       console.log(`🟢 Server is running on port ${port}`);
     });
   })

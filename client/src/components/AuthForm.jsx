@@ -23,7 +23,7 @@ const AuthForm = () => {
             const { data } = await axios.post(backendUrl + endpoint, payload);
             if (data.success) {
                 setAccessToken(data.data.tokens.accessToken);
-                setUser(data.data.user);
+                setUser(data.data.user.name);
                 localStorage.setItem('accessToken', data.data.tokens.accessToken);
                 localStorage.setItem('user', JSON.stringify(data.data.user.name));
                 setShowLogin(false);
