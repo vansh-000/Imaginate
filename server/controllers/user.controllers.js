@@ -2,6 +2,8 @@ import { ApiError } from "../utils/apiError.js";
 import { ApiResponse } from "../utils/apiResponse.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { User } from "../models/user.model.js";
+import razorpay from "razorpay";
+import { Transaction } from "../models/transaction.model.js";
 
 const generateAccessAndRefreshToken = async (id) => {
   try {
@@ -117,5 +119,107 @@ const userCredits = asyncHandler(async (req, res) => {
   );
 });
 
+const razorpayInstance = new razorpay({
+  key_id: process.env.RAZORPAY_KEY_ID,
+  key_secret: process.env.RAZORPAY_KEY_SECRET,
+});
 
-export { registerUser, generateAccessAndRefreshToken, userCredits, loginUser };
+const paymentRazorpay = asyncHandler(async (req, res) => {
+  const { planId } = req.body;
+  const userId = req.user;
+  if (!userId || !planId) {
+    throw new ApiError("Missing Details", 400);
+  }
+  const userData = await User.findById(userId);
+  if (!userData) {
+    throw new ApiError("User not found", 404);
+  }
+  let credits, plan, amount, date;
+  switch (planId) {
+    case "Basic":
+      plan = "Basic";
+      credits = 100;
+      amount = 10;
+      break;
+    case "Advanced":
+      plan = "Advanced";
+      credits = 500;
+      amount = 50;
+      break;
+    case "Business":
+      plan = "Business";
+      credits = 5000;
+      amount = 250;
+      break;
+    default:
+      return res.status(400).json(
+        new ApiResponse("Something went Wrong in choosing a Plan", 400, {
+          message: "Something went Wrong in choosing a Plan",
+        })
+      );
+  }
+  date = Date.now();
+
+  const transactionData = {
+    userId,
+    plan,
+    amount,
+    credits,
+    date,
+  };
+  const newTransaction = await Transaction.create(transactionData);
+
+  const options = {
+    amount: amount * 100,
+    currency: "INR",
+    receipt: newTransaction._id,
+  };
+
+  const payment = await razorpayInstance.orders.create(
+    options,
+    (error, order) => {
+      if (error) {
+        return res.status(400).json(
+          new ApiResponse("Something went Wrong in Payment", 400, {
+            message: "Something went Wrong in Payment",
+          })
+        );
+      }
+      res.json({ success: true, order });
+    }
+  );
+});
+
+const verifyRazorpay = asyncHandler(async (req, res) => {
+  const { razorpay_order_id } = req.body;
+  const orderInfo = await razorpayInstance.orders.fetch(razorpay_order_id);
+  if (orderInfo.status === "paid") {
+    const transaction = await Transaction.findOneTransaction.findOne({
+      _id: orderInfo.receipt,
+    });
+    if (transaction.payment) {
+      return res.json({
+        success: false,
+        message: "Payment failed",
+      });
+    }
+    const userData = await User.findById(transaction.userId);
+    const newBalance = userData.creditBalance + transaction.credits;
+    await User.findByIdAndUpdate(userData._id, { creditBalance });
+    await Transaction.findByIdAndUpdate(transaction._id, {
+      payment: true,
+    });
+    res.json({ success: true, message: "Credits added" });
+  } else {
+    res.json({ success: false, message: "Payment failed" });
+  }
+});
+
+export {
+  registerUser,
+  generateAccessAndRefreshToken,
+  userCredits,
+  loginUser,
+  paymentRazorpay,
+  verifyRazorpay,
+};
