@@ -22,17 +22,18 @@ const BuyCredits = () => {
       order_id: order.id,
       receipt: order.receipt,
       handler: async (response) => {
-        try {
-          const { data } = await axios.post(backendUrl + '/api/user/verify-razor', response, { headers: { accessToken } })
-        if(data.success){
-          creditData();
-          navigate('/')
-          toast.success('Payment Successful');
-        }
-        
-        } catch (error) {
-          toast.error(error.message)
-        }
+        toast.error("Razorpay is in test mode")
+        // try {
+        //   const { data } = await axios.post(backendUrl + '/api/user/verify-razor', response, { headers: { accessToken } })
+        // if(data.success){
+        //   creditData();
+        //   navigate('/')
+        //   toast.success('Payment Successful');
+        // }
+
+        // } catch (error) {
+        //   toast.error(error.message)
+        // }
       }
     }
     const rzp = new window.Razorpay(options)
